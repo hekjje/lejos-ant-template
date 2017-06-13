@@ -1,0 +1,6 @@
+<ivy-module version="2.0">
+	<info organisation="org.apache" module="app" />
+	<dependencies>
+		<dependency org="com.github.bdeneuter" name="lejos-ev3-api" rev="0.9.1-beta"  />
+	</dependencies>
+</ivy-module>

@@ -1,0 +1,5 @@
+bin/
+dist/
+lib/
+*.jar
+!ivy.jar
