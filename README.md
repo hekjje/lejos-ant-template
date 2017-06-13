@@ -11,7 +11,7 @@
 
 **Run jar file**
 
-```$ java -jar dist/app.jar```
+```$ java -jar dist/App.jar```
 
 *When running the jar file from the local machine you will get an exception do to the code can't find the EV3 brick*
 
