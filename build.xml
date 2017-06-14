@@ -1,64 +1,68 @@
 <project name="app" default="main" basedir=".">
 	<description>Create a lejOS Java Project (JAR) with Ant build script</description>
-
-    <property name="projectName" value="App" />
+	
+	<property environment="env"/>
+	<property name="projectName" value="App" />
 	<property name="src.dir" location="src" />
 	<property name="build.dir" location="bin" />
 	<property name="dist.dir" location="dist" />
 	<property name="dist.lib.dir" location="dist/lib" />
 	<property name="lib.dir" value="lib" />
 	<property name="main-class" value="app.Application" />
+	<property name="ev3.home" value="${env.EV3_HOME}" />
 
+	<taskdef name="ivy-configure" classname="org.apache.ivy.ant.IvyConfigure" classpath="ivy.jar"/>
+	<taskdef name="ivy-resolve" classname="org.apache.ivy.ant.IvyResolve" classpath="ivy.jar" />
+	<taskdef name="ivy-retrieve" classname="org.apache.ivy.ant.IvyRetrieve" classpath="ivy.jar" />
+	<taskdef name="ivy-publish" classname="org.apache.ivy.ant.IvyPublish" classpath="ivy.jar"/>
+	<taskdef name="ivy-cleancache" classname="org.apache.ivy.ant.IvyCleanCache" classpath="ivy.jar"/>
 
-    <taskdef name="ivy-configure" classname="org.apache.ivy.ant.IvyConfigure" classpath="ivy.jar"/>
-    <taskdef name="ivy-resolve" classname="org.apache.ivy.ant.IvyResolve" classpath="ivy.jar" />
-    <taskdef name="ivy-retrieve" classname="org.apache.ivy.ant.IvyRetrieve" classpath="ivy.jar" />
-    <taskdef name="ivy-publish" classname="org.apache.ivy.ant.IvyPublish" classpath="ivy.jar"/>
-    <taskdef name="ivy-cleancache" classname="org.apache.ivy.ant.IvyCleanCache" classpath="ivy.jar"/>
-
-    <target name="resolve" description="retrieve dependencies with ivy">
-		<ivy-retrieve />
-	</target>
-
-    <target name="init">
-		<mkdir dir="${build.dir}" />
-	</target>
-
-    <path id="classpath">
+	<path id="classpath">
 		<fileset dir="${basedir}/">
-			<include name="${lib.dir}/*.jar" />
+			<include name="${lib.dir}/**/*.jar" />
 			<exclude name="${lib.dir}/*sources.jar"/>
 			<exclude name="${lib.dir}/*javadoc.jar"/>
 		</fileset>
 	</path>
 
-    <target name="compile" depends="init" description="compile the source ">
-		<javac includeantruntime="false" srcdir="${src.dir}" destdir="${build.dir}" classpathref="classpath" />
-	</target>
-
-    <pathconvert property="classpath.name" pathsep=" ">
+	<pathconvert property="classpath.name" pathsep=" ">
 		<path refid="classpath" />
 		<mapper>
 			<chainedmapper>
 				<flattenmapper />
-				<globmapper from="*.jar" to="lib/*.jar" />
+				<globmapper from="*.jar" to="${lib.dir}/*.jar" />
 			</chainedmapper>
 		</mapper>
 	</pathconvert>
 
-    <target name="copy-dependencies">
+	<target name="init">
+		<mkdir dir="${build.dir}" />
+	</target>
+
+	<target name="copy-ev3-lib">
+		<copy todir="${lib.dir}/">
+			<fileset dir="${ev3.home}/lib/ev3" includes="**/*.jar" excludes="**/*sources.jar, **/*javadoc.jar, 3rdparty/**/*.jar" />
+		</copy>
+	</target>
+
+	<target name="resolve" description="retrieve dependencies with ivy" depends="copy-ev3-lib" >
+		<ivy-retrieve />
+	</target>
+	
+	<target name="compile" depends="init" description="compile the source ">
+		<javac includeantruntime="false" srcdir="${src.dir}" destdir="${build.dir}" classpathref="classpath" />
+	</target>
+	
+	<target name="copy-dependencies">
 		<copy todir="${dist.lib.dir}">
 			<fileset dir="${lib.dir}" includes="**/*.jar" excludes="**/*sources.jar, **/*javadoc.jar" />
 		</copy>
 	</target>
 
-    <target name="jar" depends="compile, copy-dependencies" description="package, output to JAR">
-
+	<target name="jar" depends="compile, copy-dependencies" description="package, output to JAR">
 		<echo message="classpath.name : ${classpath.name} " />
-
 		<mkdir dir="${dist.dir}" />
 		<mkdir dir="${dist.lib.dir}" />
-
 		<jar jarfile="${dist.dir}/${projectName}.jar" basedir="${build.dir}">
 			<manifest>
 				<attribute name="Main-Class" value="${main-class}" />
@@ -67,12 +71,19 @@
 		</jar>
 	</target>
 
-	<target name="clean" description="clean up">
+	<target name="clean" description="clean build up">
 		<delete dir="${build.dir}" />
 		<delete dir="${dist.dir}" />
 	</target>
 
-	<!-- Default, run this -->
-	<target name="main" depends="clean, compile, jar" />
+	<target name="clean-all" description="clean all up" depends="clean">
+		<delete dir="${lib.dir}" />
+	</target>
 
+	<target name="show-classpath" description="Shows the classpath">
+		<echo message="classpath.name : ${classpath.name} " />
+	</target>
+
+	<!-- Default, run this -->
+	<target name="main" depends="clean, resolve, compile, jar" />
 </project>
